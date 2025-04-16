@@ -1,2 +1,191 @@
-var DAYS=["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"],LOCAL_STORAGE_KEY_NAME="5f6e898b-9338-49d9-b1da-84e2609bae9d-chores",DEFAULT_CHORES={chores:[{title:"Cook dinner",days:[0,1,2,3,4,5,6]},{title:"Dishes",days:[0,1,2,3,4,5,6]},{title:"Laundry",days:[6]},{title:"Meal prep",days:[0]},{title:"Put trash out",days:[3]},{title:"Call mom",days:[5]},{title:"Vacuum",days:[2]},{title:"Mop",days:[4]}],reminders:[{title:"Buy milk",snoozedUntil:null}],version:"2020-09-05",currentChoreStatus:null,currentDay:null,settings:{confetti:!0}};function getData(){var e=JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY_NAME));return null==e?(console.log("No chores, loading defaults"),e=DEFAULT_CHORES,new Date,e.currentDay=(new Date).getDay(),loadDay(e)):("2020-09-05"===e.version?e=minorUpgrades(e):console.log("Unknown version!"),e)}function minorUpgrades(e){return void 0===e.settings&&(e.settings={}),void 0===e.settings.confetti&&(e.settings.confetti=!0),void 0===e.reminders&&(e.reminders=[]),saveData(e),e}function saveData(e){localStorage.setItem(LOCAL_STORAGE_KEY_NAME,JSON.stringify(e))}function loadDay(e){return saveData(e=loadRemindersForDay(e=loadChoresForDay(e))),e}function loadChoresForDay(e){e.currentChoreStatus=[];var t,n=e.currentDay;for(t in e.chores){var r=e.chores[t];r.days.includes(n)&&e.currentChoreStatus.push({title:r.title,isDone:!1})}return e}function loadRemindersForDay(e){for(var t in e.reminders){t=e.reminders[t];t.snoozedUntil==e.currentDay&&(t.snoozedUntil=null)}return e}function clear(){for(var e=document.querySelector("#wheel"),t=document.querySelector("#reminder");e.firstChild;)e.removeChild(e.lastChild);for(;t.firstChild;)t.removeChild(t.lastChild)}function showReminders(e){var t,n=document.querySelector("#reminder");for(t in e.reminders){var r,o,i=e.reminders[t];null===i.snoozedUntil&&((r=document.createElement("div")).classList.add("reminder","is-4","mt-4"),(o=document.createElement("span")).classList.add("title","is-4"),o.innerText=i.title,r.appendChild(o),(i=document.createElement("button")).classList.add("button","ml-5"),i.innerText="Snooze",i.addEventListener("click",generateTapSnooze(t)),r.appendChild(i),(o=document.createElement("button")).classList.add("button","ml-4"),o.innerText="Complete",o.addEventListener("click",generateTapDismiss(t)),r.appendChild(o),n.appendChild(r))}}function showChores(e){var t,n=document.querySelector("#wheel"),r=e.currentChoreStatus;for(t in r){var o=r[t],i=document.createElement("div");n.appendChild(i),i.classList.add("mr-6","mb-5","chore-wrap","button","p-5","is-rounded"),styleTask(i,o.isDone),i.innerText=o.title,i.addEventListener("click",tapTask)}}function show(){document.querySelector("#wheel").classList.add("is-flex","is-flex-direction-row","is-flex-wrap-wrap"),document.querySelector("#reminder");var e=document.querySelector("h1"),t=getData();e.innerText="Tasks for "+DAYS[t.currentDay],clear(),showReminders(t),showChores(t)}function updateChoreCompletion(e,t){var n,r=getData();for(n in r.currentChoreStatus){var o=r.currentChoreStatus[n];o.title==e&&(o.isDone=t)}t&&checkWin(r),saveData(r)}function styleTask(e,t){t?(e.classList.add("done","is-light","strikethrough"),e.classList.remove("is-primary")):(e.classList.add("is-primary"),e.classList.remove("is-light","done","strikethrough"))}function tapTask(e){var t=!e.target.classList.contains("done"),n=e.target.innerText;styleTask(e.target,t),updateChoreCompletion(n,t)}function generateTapDismiss(n){return function(e){var t=getData();t.reminders.splice(n,1),saveData(t),show()}}function generateTapSnooze(n){return function(e){var t=getData();t.reminders[n].snoozedUntil=(t.currentDay+1)%7,saveData(t),show()}}function checkWin(e){for(var t in e.currentChoreStatus)if(!e.currentChoreStatus[t].isDone)return;onWin(e)}function onWin(e){confetti&&e.settings&&e.settings.confetti&&confetti.start(3e3)}function loadNextDay(){var e=getData();dayOfWeek=((dayOfWeek=e.currentDay)+1)%7,e.currentDay=dayOfWeek,loadDay(e)}function connectButtons(){document.querySelector("#nextDay").addEventListener("click",function(){loadNextDay(),show()}),document.querySelector("#editChores").addEventListener("click",function(){window.location="edit.html"}),document.querySelector("#editReminders").addEventListener("click",function(){window.location="remind.html"}),document.querySelector("#about").addEventListener("click",function(){window.location="about.html"})}function init(){void 0!==navigator.serviceWorker&&navigator.serviceWorker.getRegistrations().then(function(e){for(var t=0;t<e.length;t++)e[t].unregister()})}window.onload=function(){init(),connectButtons(),show()};
-//# sourceMappingURL=chorewheel.js.map
+function clear() {
+  var wheel = document.querySelector('#wheel');
+  var reminderList = document.querySelector('#reminder');
+
+  while (wheel.firstChild) {
+    wheel.removeChild(wheel.lastChild);
+  }
+  while (reminderList.firstChild) {
+    reminderList.removeChild(reminderList.lastChild);
+  }
+}
+
+function showReminders(data) {
+  var reminderList = document.querySelector('#reminder');
+
+  for (var remIdx in data.reminders) {
+    var reminder = data.reminders[remIdx];
+
+    if (reminder.snoozedUntil !== null) {
+      // This reminder is snoozed
+      continue;
+    }
+
+    var reminderElm = document.createElement('div');
+    reminderElm.classList.add('reminder', 'is-4', 'mt-4');
+
+    var reminderText = document.createElement('span');
+    reminderText.classList.add('title', 'is-4');
+    reminderText.innerText = reminder.title;
+    reminderElm.appendChild(reminderText);
+
+    var snoozeElm = document.createElement('button');
+    snoozeElm.classList.add('button', 'ml-5');
+    snoozeElm.innerText = "Snooze";
+    snoozeElm.addEventListener('click', generateTapSnooze(remIdx));
+    reminderElm.appendChild(snoozeElm);
+
+    var doneElm = document.createElement('button');
+    doneElm.classList.add('button', 'ml-4');
+    doneElm.innerText = "Complete";
+    doneElm.addEventListener('click', generateTapDismiss(remIdx));
+    reminderElm.appendChild(doneElm);
+
+    reminderList.appendChild(reminderElm);
+  }
+}
+
+function showChores(data) {
+  var wheel = document.querySelector('#wheel');
+  var todaysChores = data.currentChoreStatus;
+  for (var chIdx in todaysChores) {
+    var chore = todaysChores[chIdx];
+    var button = document.createElement('div');
+    wheel.appendChild(button);
+    button.classList.add('mr-6', 'mb-5', 'chore-wrap', 'button', 'p-5', 'is-rounded');
+    styleTask(button, chore.isDone);
+    button.innerText = chore.title;
+    button.addEventListener('click', tapTask);
+  }
+}
+
+function show() {
+  var wheel = document.querySelector('#wheel');
+  wheel.classList.add('is-flex', 'is-flex-direction-row', 'is-flex-wrap-wrap');
+  var reminderList = document.querySelector('#reminder');
+  var heading = document.querySelector('h1');
+
+  var data = getData();
+  heading.innerText = 'Tasks for ' + DAYS[data.currentDay];
+
+  clear();
+  showReminders(data);
+  showChores(data);
+}
+
+function updateChoreCompletion(title, isDone) {
+  var data = getData();
+  for (var choreIdx in data.currentChoreStatus) {
+    var chore = data.currentChoreStatus[choreIdx];
+    if (chore.title == title) {
+      chore.isDone = isDone;
+    }
+  }
+  if (isDone) {
+    checkWin(data);
+  }
+  saveData(data);
+}
+
+function styleTask(button, isDone) {
+  if (isDone) {
+    button.classList.add('done', 'is-light', 'strikethrough');
+    button.classList.remove('is-primary');
+  } else {
+    button.classList.add('is-primary');
+    button.classList.remove('is-light', 'done', 'strikethrough');
+  }
+}
+
+function tapTask(clickEvent) {
+  var isDone = !(clickEvent.target.classList.contains('done'));
+  var title = clickEvent.target.innerText;
+  styleTask(clickEvent.target, isDone);
+  updateChoreCompletion(title, isDone);
+}
+
+function generateTapDismiss(remIdx) {
+  return function(clickEvent) {
+    var data = getData();
+    data.reminders.splice(remIdx, 1);
+    saveData(data);
+    show();
+  };
+}
+
+function generateTapSnooze(remIdx) {
+  return function(clickEvent) {
+    var data = getData();
+    // Push it to tomorrow
+    data.reminders[remIdx].snoozedUntil = ((data.currentDay + 1) % 7);
+    saveData(data);
+    show();
+  };
+}
+
+function checkWin(data) {
+  for (var choreIdx in data.currentChoreStatus) {
+    var chore = data.currentChoreStatus[choreIdx];
+    if (!chore.isDone) {
+      // This chore is not done
+      return;
+    }
+  }
+
+  onWin(data);
+}
+
+function onWin(data) {
+  if (confetti && data.settings && data.settings.confetti) {
+    confetti.start(3000);
+  }
+}
+
+function loadNextDay() {
+  var data = getData();
+  dayOfWeek = data.currentDay;
+  dayOfWeek = (dayOfWeek + 1) % 7;
+  data.currentDay = dayOfWeek;
+  loadDay(data);
+}
+
+function connectButtons() {
+  document.querySelector('#nextDay')
+    .addEventListener('click', function() {
+      loadNextDay();
+      show();
+    });
+
+  document.querySelector('#editChores')
+    .addEventListener('click', function() {
+      window.location = 'edit.html';
+    });
+
+  document.querySelector('#editReminders')
+    .addEventListener('click', function() {
+      window.location = 'remind.html';
+    });
+
+  document.querySelector('#about')
+    .addEventListener('click', function() {
+      window.location = 'about.html';
+    });
+}
+
+function init() {
+  // Previously used service workers should be removed
+  if (typeof(navigator.serviceWorker) !== 'undefined') {
+    navigator.serviceWorker.getRegistrations().then(function(registrations) {
+      for (var i = 0; i < registrations.length; i++) {
+        registrations[i].unregister();
+      }
+    });
+  }
+}
+
+window.onload = function() {
+  init();
+  connectButtons();
+  show();
+};
+
